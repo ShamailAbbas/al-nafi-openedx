@@ -1,0 +1,45 @@
+prometheusOperator:
+  enabled: true
+
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          resources:
+            requests:
+              storage: 5Gi
+    additionalScrapeConfigs:
+      - job_name: "kubernetes-pods"
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          # Drop EKS-managed control plane pods and other AWS services
+          - source_labels:
+              [__meta_kubernetes_namespace, __meta_kubernetes_pod_name]
+            regex: kube-system;(kube-controller-manager|kube-scheduler|aws-node|coredns|aws-load-balancer-controller|cluster-autoscaler|ebs-csi-.*|efs-csi-.*|vpc-cni-.*)
+            action: drop
+
+  ingress:
+    enabled: false
+
+alertmanager:
+  enabled: false
+
+
+grafana:
+  enabled: true
+  adminUser: admin
+  adminPassword: admin
+  service:
+    name: prometheus-grafana
+    type: ClusterIP
+    port: 80
+  persistence:
+    enabled: true
+    storageClassName: gp3
+    size: 5Gi
+  ingress:
+    enabled: false

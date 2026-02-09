@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: analytics
+  labels:
+    app: logstash
+    app.kubernetes.io/name: logstash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+        app.kubernetes.io/name: logstash
+    spec:
+      containers:
+        - name: logstash
+          image: opensearchproject/logstash-oss-with-opensearch-output-plugin:8.9.0
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/logstash/pipeline/
+      volumes:
+        - name: config
+          configMap:
+            name: logstash-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+  namespace: analytics
+spec:
+  selector:
+    app: logstash
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: analytics
+data:
+  logstash.conf: |
+    input {
+      tcp {
+        port => 5000
+        codec => json_lines
+      }
+    }
+
+    filter {
+      ########################################################
+      # Step 1: Identify log source and set index name
+      ########################################################
+      
+
+      
+      # K8s system logs
+      if [kubernetes][namespace_name] =~ /kube-system/ {
+        if [kubernetes][labels][k8s-app] {
+          mutate {
+            add_field => { "[@metadata][index]" => "k8s-%{[kubernetes][labels][k8s-app]}" }
+            add_field => { "log_source" => "k8s" }
+          }
+        } else if [kubernetes][labels][app.kubernetes.io/name] {
+          mutate {
+            add_field => { "[@metadata][index]" => "k8s-%{[kubernetes][labels][app.kubernetes.io/name]}" }
+            add_field => { "log_source" => "k8s" }
+          }
+        } else {
+          mutate {
+            add_field => { "[@metadata][index]" => "k8s-unknown" }
+            add_field => { "log_source" => "k8s" }
+          }
+        }
+      }
+      
+      
+      else {
+        if [kubernetes][labels][app.kubernetes.io/name] {
+          mutate {
+            add_field => { "app_name" => "%{[kubernetes][labels][app.kubernetes.io/name]}" }
+            add_field => { "[@metadata][index]" => "%{[kubernetes][labels][app.kubernetes.io/name]}" }
+            add_field => { "log_source" => "%{[kubernetes][namespace_name]}" }
+          }
+        } else {
+          mutate {
+            add_field => { "[@metadata][index]" => "openedx-unknown" }
+            add_field => { "log_source" => "%{[kubernetes][namespace_name]}" }
+          }
+        }
+      }
+
+      ########################################################
+      # Step 2: Add namespace and pod info as top-level fields
+      ########################################################
+      mutate {
+        add_field => { 
+          "namespace" => "%{[kubernetes][namespace_name]}"
+          "pod_name" => "%{[kubernetes][pod_name]}"
+          "container_name" => "%{[kubernetes][container_name]}"
+        }
+      }
+
+      ########################################################
+      # Step 3: Parse the log message if it's JSON
+      ########################################################
+      if [log] {
+        json {
+          source => "log"
+          target => "parsed_log"
+          tag_on_failure => ["_jsonparsefailure"]
+        }
+        
+        # If JSON parsing succeeded, flatten useful fields
+        if "_jsonparsefailure" not in [tags] and [parsed_log] {
+          mutate {
+            rename => {
+              "[parsed_log][level]"   => "log_level"
+              "[parsed_log][message]" => "log_message"
+              "[parsed_log][timestamp]" => "log_timestamp"
+            }
+          }
+        }
+      }
+
+      ########################################################
+      # Step 4: Cleanup - remove the nested kubernetes object
+      ########################################################
+      mutate {
+        remove_field => [ "kubernetes", "parsed_log" ]
+      }
+    }
+
+    # output {
+    #   opensearch {
+    #     hosts => ["https://search-openedx-dev-es-lke333zvoyzzdmcbtphdbnmewu.us-east-2.es.amazonaws.com:443"]
+    #     ssl => true
+    #     ssl_certificate_verification => false
+    #     index => "%{[@metadata][index]}-%{+YYYY.MM.dd}"
+    #   }
+      
+    #   # Debug output (optional - remove in production)
+    #   # stdout { codec => rubydebug }
+    # }
+
+    output {
+      opensearch {
+        hosts => ["https://search-openedx-dev-es-lke333zvoyzzdmcbtphdbnmewu.us-east-2.es.amazonaws.com:443"]
+        user => "admin"
+        password => "Admin123!"
+        ssl => true
+        ssl_certificate_verification => false
+        index => "%{[@metadata][index]}-%{+YYYY.MM.dd}"
+      }
+      
+      # Debug output (optional - remove in production)
+      # stdout { codec => rubydebug }
+    }
