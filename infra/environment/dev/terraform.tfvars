@@ -13,9 +13,9 @@ single_nat_gateway = true
 # EKS Configuration
 kubernetes_version      = "1.31"
 node_instance_type      = "t3.medium"
-node_group_min_size     = 2
-node_group_max_size     = 4
-node_group_desired_size = 2
+node_group_min_size     = 4
+node_group_max_size     = 6
+node_group_desired_size = 4
 
 # Database Configuration
 db_instance_class    = "db.t3.small"
@@ -26,9 +26,6 @@ db_multi_az          = false
 redis_node_type       = "cache.t3.small"
 redis_num_cache_nodes = 1
 
-# MongoDB Configuration
-mongodb_instance_class = "db.t3.medium"
-mongodb_instance_count = 1
 
 # OpenSearch Configuration
 elasticsearch_instance_type   = "t3.small.search"

@@ -55,8 +55,6 @@ module "database" {
   redis_node_type       = var.redis_node_type
   redis_num_cache_nodes = var.redis_num_cache_nodes
 
-  mongodb_instance_class = var.mongodb_instance_class
-  mongodb_instance_count = var.mongodb_instance_count
 
   rds_security_group_id     = module.security.rds_security_group_id
   redis_security_group_id   = module.security.redis_security_group_id

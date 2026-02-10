@@ -22,6 +22,7 @@ MONGODB_PASSWORD='{get_value('mongodb_password')}'
 MYSQL_USERNAME={get_value('mysql_username')}
 MYSQL_PASSWORD='{get_value('mysql_password')}'
 AWS_REGION={get_value('aws_region')}
+CLUSTER_NAME={get_value('cluster_name')}
 '''
 
 print(env_content)

@@ -1,6 +1,29 @@
 #!/bin/bash
 set -e
 
+# Path to .env 
+ENV_FILE="../.env"
+
+# Load environment variables from .env file
+echo ">>> Loading environment variables from $ENV_FILE..."
+if [ -f "$ENV_FILE" ]; then
+    set -a  # automatically export all variables
+    source "$ENV_FILE"
+    set +a  # disable auto-export
+    echo "Environment variables loaded successfully"
+else
+    echo "ERROR: $ENV_FILE not found!"
+    exit 1
+fi
+
+aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+# Optional: verify variables are loaded
+echo ">>> Verifying key variables..."
+echo "CLUSTER_NAME: $CLUSTER_NAME"
+echo "AWS_REGION: $AWS_REGION"
+
+
 
 echo "Deploy OpenedX  with Nginx Ingress + SSL "
 
@@ -157,27 +180,6 @@ echo "Please allow a few minutes for everything to stabilize."
 
 ######################## deploy-openedx #############################
 
-
-# Path to .env 
-ENV_FILE="../.env"
-
-# Load environment variables from .env file
-echo ">>> Loading environment variables from $ENV_FILE..."
-if [ -f "$ENV_FILE" ]; then
-    set -a  # automatically export all variables
-    source "$ENV_FILE"
-    set +a  # disable auto-export
-    echo "Environment variables loaded successfully"
-else
-    echo "ERROR: $ENV_FILE not found!"
-    exit 1
-fi
-
-# Optional: verify variables are loaded
-echo ">>> Verifying key variables..."
-echo "MYSQL_HOST: $MYSQL_HOST"
-echo "REDIS_HOST: $REDIS_HOST"
-
 # Install Python venv if not present
 echo ">>> Installing Python venv..."
 if ! dpkg -l | grep -q python3.12-venv; then
@@ -227,9 +229,6 @@ tutor config save \
   --set MONGODB_PASSWORD="$MONGODB_PASSWORD" \
   --set MONGODB_AUTH_SOURCE=admin \
   --set MONGO_AUTH_DB=admin \
-  # --set MONGODB_USE_SSL=true \
-  # --set MONGODB_VERIFY_SSL=false \
-  # --set MONGODB_EXTRA_OPTIONS="tlsAllowInvalidCertificates=true" \
   --set OPENEDX_AWS_STORAGE_BUCKET_NAME="$S3_BUCKET" \
   --set OPENEDX_AWS_S3_REGION_NAME="$AWS_REGION" \
   --set LMS_HOST="savegb.org" \
@@ -244,8 +243,12 @@ tutor k8s start
 
 kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
+kubectl delete svc caddy -n openedx
+kubectl delete deploy caddy -n openedx
 
 tutor k8s init
+
+
 
 
 

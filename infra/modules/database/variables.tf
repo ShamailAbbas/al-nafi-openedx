@@ -54,17 +54,7 @@ variable "redis_num_cache_nodes" {
   default     = 1
 }
 
-variable "mongodb_instance_class" {
-  description = "MongoDB instance class"
-  type        = string
-  default     = "db.t3.medium"
-}
 
-variable "mongodb_instance_count" {
-  description = "Number of MongoDB instances"
-  type        = number
-  default     = 1
-}
 
 variable "rds_security_group_id" {
   description = "Security group ID for RDS"
@@ -92,8 +82,6 @@ variable "vpc_cidr" {
   type        = string
   
 }
-
-
 
 
 # variables.tf - Add to your existing variables

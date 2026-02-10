@@ -37,29 +37,6 @@ output "redis_port" {
   value       = aws_elasticache_cluster.redis.cache_nodes[0].port
 }
 
-# output "mongodb_endpoint" {
-#   description = "MongoDB endpoint"
-#   value       = aws_docdb_cluster.mongodb.endpoint
-# }
-
-# output "mongodb_port" {
-#   description = "MongoDB port"
-#   value       = aws_docdb_cluster.mongodb.port
-# }
-
-# output "mongodb_username" {
-#   description = "MongoDB username"
-#   value       = aws_docdb_cluster.mongodb.master_username
-#   sensitive   = true
-# }
-
-# output "mongodb_password" {
-#   description = "MongoDB password"
-#   value       = random_password.mongodb.result
-#   sensitive   = true
-# }
-
-
 
 
 

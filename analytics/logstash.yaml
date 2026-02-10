@@ -141,18 +141,6 @@ data:
       }
     }
 
-    # output {
-    #   opensearch {
-    #     hosts => ["https://search-openedx-dev-es-lke333zvoyzzdmcbtphdbnmewu.us-east-2.es.amazonaws.com:443"]
-    #     ssl => true
-    #     ssl_certificate_verification => false
-    #     index => "%{[@metadata][index]}-%{+YYYY.MM.dd}"
-    #   }
-      
-    #   # Debug output (optional - remove in production)
-    #   # stdout { codec => rubydebug }
-    # }
-
     output {
       opensearch {
         hosts => ["https://search-openedx-dev-es-lke333zvoyzzdmcbtphdbnmewu.us-east-2.es.amazonaws.com:443"]

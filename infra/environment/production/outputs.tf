@@ -3,6 +3,10 @@ output "aws_region" {
   value       = var.aws_region
 }
 
+output "cluster_name" {
+  description = "EKS cluster name"
+  value       = var.cluster_name
+}
 
 output "mysql_host" {
   description = "MySQL host"
