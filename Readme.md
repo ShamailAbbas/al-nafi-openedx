@@ -5,18 +5,8 @@
 You can watch a demo of the project
 
 <p align="center">
-  <a href="https://www.loom.com/share/b6aecb00d3de4cda9001bbfbb2844918">
+  <a href="https://drive.google.com/file/d/1RncE1yI7aJjHYJI5ZJmWq8dp95hA2JYR/view?usp=sharing">
     <strong>▶ Watch Open edX Al-Nafi Deployment Demo, Dont forget to unmute!!!</strong>
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://www.loom.com/share/b6aecb00d3de4cda9001bbfbb2844918">
-    <img
-      src="https://cdn.loom.com/sessions/thumbnails/b6aecb00d3de4cda9001bbfbb2844918-2e1b9d356d674766-full-play.gif"
-      alt="Open edX Al-Nafi Deployment Demo"
-      width="480"
-    />
   </a>
 </p>
 
