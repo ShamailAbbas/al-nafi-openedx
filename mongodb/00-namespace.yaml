@@ -1,45 +1,6 @@
-# =============================================================================
-#
-#  MongoDB 7.0 – Production StatefulSet for OpenedX on Kubernetes
-#
-#  What this deploys:
-#    • 3-node Replica Set (rs0) via StatefulSet
-#    • Per-pod PVC (50Gi, gp3, reclaimPolicy=Retain)
-#    • Auth: root admin "openedx" + per-DB users for openedx /
-#            cs_comments_service / xqueue  (mirrors EC2 setup script)
-#    • Prometheus sidecar exporter (percona mongodb_exporter)
-#    • NetworkPolicy (deny-all + whitelist)
-#    • PodDisruptionBudget (minAvailable: 2)
-#    • Hard pod anti-affinity across nodes, soft across AZs
-#    • Init Job that bootstraps rs0 + all users (idempotent)
-#    • ServiceMonitor for Prometheus Operator
-#
-#  Namespace: openedx  (already exists – Namespace resource below is a no-op)
-#  Apps & MongoDB are co-located in 'openedx' – no cross-namespace policy needed.
-#
-#  Apply:
-#    kubectl apply -f mongodb-openedx.yaml
-#
-#  Watch:
-#    kubectl -n openedx rollout status sts/mongodb
-#    kubectl -n openedx logs -f job/mongodb-init
-#
-#  ⚠️  BEFORE DEPLOYING:
-#    1. Replace MONGO_REPLICA_SET_KEY with a real keyfile:
-#         openssl rand -base64 756 | base64 -w 0
-#    2. Swap StorageClass provisioner to match your cloud (see section 6)
-#
-# =============================================================================
-
-
-# =============================================================================
-# 1. NAMESPACE
-#    The 'openedx' namespace already exists in your cluster (confirmed).
-#    Applying this block is a harmless no-op – kubectl will say "unchanged".
-# =============================================================================
-# apiVersion: v1
-# kind: Namespace
-# metadata:
-#   name: openedx
-#   labels:
-#     app.kubernetes.io/name: openedx
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openedx
+  labels:
+    app.kubernetes.io/name: openedx

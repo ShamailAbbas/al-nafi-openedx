@@ -1,287 +1,221 @@
-# Open edX Deployment Guide
+# Open edX Al-Nafi Deployment Guide
 
-## VIDEO Demo
+## Video Demo
 
-You can watch a demo of the project
+Watch a video demonstration of the full Open edX Al-Nafi deployment:
 
-<p align="center">
-  <a href="https://drive.google.com/file/d/1RncE1yI7aJjHYJI5ZJmWq8dp95hA2JYR/view?usp=sharing">
-    <strong>▶ Watch Open edX Al-Nafi Deployment Demo, Dont forget to unmute!!!</strong>
-  </a>
-</p>
-
-## Prerequisites
-
-- Terraform installed
-- kubectl configured
-- Helm installed
-- Domain name ready (example uses savegb.org)
+[▶ Watch Deployment Demo](https://drive.google.com/file/d/1RncE1yI7aJjHYJI5ZJmWq8dp95hA2JYR/view?usp=sharing)
 
 ---
 
-## Step 1: Deploy Infrastructure
+## Prerequisites
 
-We have multiple environments available. For this demo, we will deploy in the **dev environment**.
+Before starting, ensure the following are installed and configured:
 
-All infrastructure is managed as code using **Terraform**. This step will provision:
+- Terraform
+- kubectl
+- Helm
+- Domain name (example uses `savegb.org`)
+- AWS CLI with sufficient permissions
 
+---
+
+## Step 1: Provision Infrastructure
+
+Navigate to the dev environment and provision AWS infrastructure using Terraform. This step creates:
+
+- Amazon EKS cluster
+- VPC networking
 - OpenSearch cluster for logging and analytics
-- Amazon EKS (Elastic Kubernetes Service) cluster
-- VPC (Virtual Private Cloud) networking
 - S3 buckets for storage
-- EC2 instance with MongoDB database
-- RDS as database
-- ElastiCache for caching
+- RDS for database
+- ElastiCache cluster
 
-**Note:** CDN and WAF are not included due to time constraints.
-
-### Commands:
+### Commands
 
 ```bash
-# Navigate to the dev environment directory
 cd infra/environment/dev
-
-# Initialize Terraform (downloads required providers and modules)
 terraform init
-
-# Apply the Terraform configuration to create all infrastructure resources
 terraform apply --auto-approve
 ```
 
-**What happens:** Terraform will create all the AWS resources defined in the configuration files. This process may take 10-15 minutes.
+**Note:** Terraform will provision all AWS resources. This may take 10–15 minutes.
 
 ---
 
 ## Step 2: Load Environment Variables
 
-After the infrastructure is deployed, you need to load the necessary environment variables that Open edX will use to connect to the infrastructure components.
+The `getcreds.sh` script extracts Terraform outputs and sets up Kubernetes context.
 
-The `getcreds.sh` script is located in the `infra/environment/dev` folder and will:
-
-- Extract credentials from Terraform outputs
-- Set up Kubernetes context
-- Export environment variables for database connections, cache endpoints, etc.
-
-### Commands:
+### Commands
 
 ```bash
-# Run the script to load environment variables
 bash getcreds.sh
 ```
 
-**What happens:** This script configures your terminal session with all the necessary credentials and endpoints.
+**Result:**
+
+- Environment variables for database connections, cache endpoints, and other infrastructure are exported.
+- Kubernetes context is configured.
 
 ---
 
-## Step 3: Deploy Open edX Platform
+## Step 3: Deploy Nginx Ingress Controller and Cert-Manager
 
-Now we'll deploy the Open edX platform itself on the EKS cluster. This deployment will set up:
-
-- **LMS** (Learning Management System) at `savegb.org`
-- **Studio/CMS** (Content Management System) at `cms.savegb.org`
-- **MFE** (Micro-Frontend Applications) at `apps.savegb.org`
-
-The `deploy.sh` script will:
-
-1. Deploy nginx-ingress controller
-2. Deploy cert-manager for SSL/TLS certificates
-3. Deploy the Open edX platform using Helm charts and tutor
-
-### Commands:
+### Commands
 
 ```bash
-# Navigate to the openedx directory
-cd ../../../openedx
+cd ../../../nginx
+bash deploy-nginx.sh
+```
 
-# Run the deployment script
+**Notes:**
+
+- Update domain names in the configuration files to match your own domain.
+- Copy the ALB endpoint and create CNAME records in your DNS.
+
+---
+
+## Step 4: Deploy MongoDB
+
+Deploy MongoDB cluster with persistent storage.
+
+### Commands
+
+```bash
+cd ../mongodb
 bash deploy.sh
 ```
 
-**Important:**
-
-- Make sure to update the domain names in the configuration files to match your own domain
-- After running the script, you'll be prompted to add DNS records
-- Copy the ALB (Application Load Balancer) endpoint and create CNAME records in your domain's DNS settings
-
-**What happens:** The script deploys all Open edX components to your Kubernetes cluster and configures SSL certificates.
+**Result:** MongoDB StatefulSet and PVCs are deployed on Kubernetes.
 
 ---
 
-## Step 4: Deploy Grafana and Prometheus for Monitoring
+## Step 5: Deploy Open edX Platform
 
-This step sets up comprehensive monitoring for your cluster using:
+Deploy the full Open edX stack:
 
-- **Prometheus** for metrics collection
-- **Grafana** for visualization dashboards
+- LMS at `savegb.org`
+- CMS/Studio at `cms.savegb.org`
+- Micro-Frontend Applications at `apps.savegb.org`
 
-### Commands:
+### Commands
 
 ```bash
-# Navigate to cluster directory and set up ALB controller
+cd ../openedx
+bash deploy-openedx.sh
+```
+
+**Result:** Open edX components are deployed with Helm/Tutor and SSL certificates are configured.
+
+---
+
+## Step 6: Configure WAF and CDN
+
+Deploy AWS WAF rules and CloudFront CDN.
+
+### Commands
+
+```bash
+cd ../waf_cdn
+terraform init
+terraform apply --auto-approve
+```
+
+**Result:** Traffic is filtered for security, and CDN is enabled for global delivery.
+
+---
+
+## Step 7: Deploy Monitoring Stack
+
+Set up monitoring with Prometheus and Grafana.
+
+### Commands
+
+```bash
+cd ../monitoring
+bash deploy-monitoring.sh
+```
+
+**Result:**
+
+- Metrics collection.
+- Grafana dashboards are available for visualization.
+
+---
+
+## Step 8: Deploy AWS ALB Controller
+
+### Commands
+
+```bash
 cd ../cluster
 bash setup-alb-controller.sh
-
-# Navigate to monitoring directory
-cd ../monitoring
-
-# Create the monitoring namespace and storage class
-kubectl apply -f namespaces.yaml
-kubectl apply -f storageclass.yaml
-
-# Add Helm repositories for Prometheus and Grafana
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add grafana https://grafana.github.io/helm-charts
-helm repo update
-
-# Install Prometheus stack with custom values
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  -f values.yaml
-
-# Deploy ingress resources for external access
-kubectl apply -f grafana-ingress.yaml
-kubectl apply -f prometheus-ingress.yaml
-
-# Get the ingress URLs for Grafana and Prometheus
-kubectl get ingress -n monitoring
 ```
 
-**What happens:**
-
-- Prometheus begins collecting metrics from all cluster components
-- Grafana is configured with pre-built dashboards
-- Ingress resources expose both services externally
-
-**Access Details:**
-
-- **Grafana default credentials:** Username: `admin` / Password: `admin` (you'll be prompted to change this on first login)
-- Use the ingress URLs displayed by the last command to access the interfaces
+**Result:** Kubernetes ingress can now use AWS ALB for external access.
 
 ---
 
-## Step 5: Deploy Fluentbit and Logstash
+## Step 9: Deploy Analytics Stack
 
-This step sets up the logging pipeline to collect, process, and ship logs to OpenSearch for analysis.
+Deploy Fluentbit, Logstash, and OpenSearch for logging and analytics.
 
-**Components:**
-
-- **Fluentbit** - Lightweight log collector running on each node
-- **Logstash** - Log processing and transformation
-- **OpenSearch** - Log storage and analysis
-
-### Prerequisites:
-
-Before running these commands, you must:
-
-1. Locate the OpenSearch endpoint from the Terraform output in Step 1
-2. Update the OpenSearch URL in `analytics/logstash.yaml` file
-
-### Commands:
+### Commands
 
 ```bash
-# Navigate to analytics directory
 cd ../analytics
-
-# Create the analytics namespace
-kubectl apply -f namespace.yaml
-
-# Deploy all logging components (Fluentbit and Logstash)
-kubectl apply -f .
+bash deploy-analytics.sh
 ```
 
-**What happens:**
+**Result:**
 
-- Fluentbit DaemonSet is deployed to collect logs from all pods
-- Logstash processes and forwards logs to OpenSearch
-- Logs become searchable in OpenSearch Dashboards
-
-**OpenSearch Access Details:**
-
-- **Username:** `admin`
-- **Password:** `Admin123!`
-- Use the OpenSearch endpoint URL to access dashboards
+- Logs are collected from all pods via Fluentbit.
+- Logstash processes logs and sends them to OpenSearch.
+- Logs become searchable in OpenSearch dashboards.
 
 ---
 
-## Step 6: HPA and Cluster Scaling
+## Step 10: Configure HPA and Cluster Autoscaler
 
-This step configures automatic scaling at two levels:
-
-1. **Horizontal Pod Autoscaler (HPA)** - Scales individual pods based on CPU/memory usage
-2. **Cluster Autoscaler** - Scales EC2 nodes in the cluster based on resource demand
-
-### Part A: Deploy Metrics Server and HPA
-
-The Metrics Server collects resource metrics from Kubernetes and makes them available for autoscaling decisions.
+### A) Deploy Metrics Server and HPA
 
 ```bash
-# Navigate to openedx directory
 cd ../openedx
-
-# Deploy Kubernetes Metrics Server (required for HPA)
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-# Apply HPA configurations for LMS, CMS, and worker pods
 kubectl apply -f hpa.yaml
 ```
 
-**What happens:**
+**Result:** Horizontal Pod Autoscaler (HPA) scales LMS, CMS, and worker pods based on CPU and memory usage.
 
-- Metrics Server begins collecting CPU and memory metrics
-- HPA configurations are applied to automatically scale:
-  - LMS pods
-  - CMS pods
-  - Worker pods (for background tasks)
-
-### Part B: Deploy Cluster Autoscaler
-
-The Cluster Autoscaler automatically adjusts the number of nodes in your cluster.
+### B) Deploy Cluster Autoscaler
 
 ```bash
-# Navigate to cluster directory
 cd ../cluster
-
-# Deploy the cluster autoscaler
 bash cluster-autoscaler.sh
 ```
 
-**What happens:**
-
-- Cluster Autoscaler monitors pod resource requests
-- Automatically adds nodes when pods can't be scheduled due to insufficient resources
-- Removes underutilized nodes to save costs
+**Result:** Cluster Autoscaler adjusts EC2 node count based on pod scheduling requirements and resource utilization.
 
 ---
 
-## Step 7: Cleanup
+## Step 11: Cleanup
 
-When you're done with the deployment and want to tear down all resources:
-
-### Commands:
+### Commands
 
 ```bash
-# First, delete all Kubernetes ingress resources and loadbalancers
-# (This prevents ALB resources from being orphaned)
+# Delete ingress resources first to avoid orphaned AWS Load Balancers
 kubectl delete ingress --all --all-namespaces
-
 kubectl delete svc --all --all-namespaces
 
+# Remove S3 bucket contents
 aws s3 rm "s3://${S3_STORAGE_BUCKET}" --recursive
 
-
-# Navigate back to the Terraform directory
+# Destroy Terraform infrastructure
 cd ../infra/environment/dev
-
-# Destroy all infrastructure resources
 terraform destroy --auto-approve
-
 ```
 
-**What happens:**
-
-- Terraform removes all AWS resources created in Step 1
-- This includes EKS cluster, VPC, databases, storage, etc.
-
-**Important:** Always delete ingress resources first to ensure that AWS Load Balancers are properly removed before destroying the infrastructure.
+**Notes:** Delete ingress resources first to prevent leftover ALBs. Terraform destroy will remove EKS, VPC, databases, storage, and all other resources.
 
 ---

@@ -1,12 +1,3 @@
-# =============================================================================
-# 6. POD DISRUPTION BUDGET + STORAGE CLASS
-#
-#   StorageClass provisioner options:
-#     AWS EKS   → ebs.csi.aws.com          (current)
-#     GKE       → pd.csi.storage.gke.io
-#     Azure AKS → disk.csi.azure.com
-#     On-prem   → rancher.io/local-path  or your Ceph/Longhorn provisioner
-# =============================================================================
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

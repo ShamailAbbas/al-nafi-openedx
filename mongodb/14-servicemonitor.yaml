@@ -1,9 +1,3 @@
-# =============================================================================
-# 10. SERVICE MONITOR  (Prometheus Operator)
-#     Remove this section if you're not using prometheus-operator.
-#     The label "release: prometheus" must match your Prometheus CR's
-#     serviceMonitorSelector.
-# =============================================================================
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

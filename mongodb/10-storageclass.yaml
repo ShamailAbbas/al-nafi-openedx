@@ -4,12 +4,12 @@ metadata:
   name: gp3
   labels:
     app.kubernetes.io/name: mongodb
-provisioner: ebs.csi.aws.com          # ← change for your cloud
+provisioner: ebs.csi.aws.com
 parameters:
   type: gp3
   iops: "3000"
   throughput: "125"
   encrypted: "true"
-reclaimPolicy: Retain                 # CRITICAL – keeps data even if PVC is deleted
+reclaimPolicy: Retain
 allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
