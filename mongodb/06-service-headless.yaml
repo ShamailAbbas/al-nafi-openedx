@@ -1,0 +1,21 @@
+#    • mongodb-secondary – ClusterIP, read traffic (all pods; add role label to narrow)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-headless
+  namespace: openedx
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/component: database
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: mongodb
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb

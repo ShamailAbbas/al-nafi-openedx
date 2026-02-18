@@ -1,0 +1,298 @@
+# =============================================================================
+# 7. STATEFULSET  (3 replicas, 50Gi PVC each)
+# =============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: openedx
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/component: database
+    app.kubernetes.io/version: "7.0"
+spec:
+  serviceName: mongodb-headless
+  replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mongodb
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongodb
+        app.kubernetes.io/component: database
+        app.kubernetes.io/version: "7.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9216"
+
+    spec:
+      serviceAccountName: mongodb
+      terminationGracePeriodSeconds: 60
+
+      # ── Pod-level security context ──────────────────────────────────────────
+      securityContext:
+        fsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+
+      # ── Anti-affinity: required across nodes, preferred across AZs ──────────
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: mongodb
+              topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: mongodb
+                topologyKey: topology.kubernetes.io/zone
+
+      # ── Init Containers ─────────────────────────────────────────────────────
+      initContainers:
+        # 1) Copy keyfile from secret and set mode 400.
+        #    Runs as uid 999 (mongodb) – compatible with non-root PSA policy.
+        #    cp creates the file owned by 999, so chown is not needed.
+        - name: keyfile-init
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              cp /tmp/keyfile-src/MONGO_REPLICA_SET_KEY /etc/mongodb/keyfile
+              chmod 400 /etc/mongodb/keyfile
+              echo "Keyfile installed."
+          volumeMounts:
+            - name: keyfile-src
+              mountPath: /tmp/keyfile-src
+            - name: keyfile
+              mountPath: /etc/mongodb
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+        # 2) Create log directory. Runs as uid 999, mkdir sets ownership automatically.
+        - name: log-dir-init
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - mkdir -p /data/log && echo "Log dir ready."
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+      # ── Main Containers ─────────────────────────────────────────────────────
+      containers:
+        # ── MongoDB ────────────────────────────────────────────────────────────
+        - name: mongodb
+          image: mongo:7.0.6
+          imagePullPolicy: IfNotPresent
+          command:
+            - mongod
+            - --config=/etc/mongodb/mongod.conf
+          ports:
+            - name: mongodb
+              containerPort: 27017
+              protocol: TCP
+
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: MONGO_INITDB_ROOT_PASSWORD
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+
+          # Startup probe – allows up to 5 min for cold start
+          startupProbe:
+            exec:
+              command:
+                - mongosh
+                - --quiet
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 30
+
+          # Readiness – ping only (rs.status check removed to avoid
+          # chicken-and-egg failure before the replica set is initialized).
+          # Once rs0 is up, the pod naturally serves traffic.
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --quiet
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Liveness – basic ping
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --quiet
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+              subPath: db
+            - name: mongodb-data
+              mountPath: /data/log
+              subPath: log
+            - name: mongodb-config
+              mountPath: /etc/mongodb/mongod.conf
+              subPath: mongod.conf
+            - name: keyfile
+              mountPath: /etc/mongodb/keyfile
+              subPath: keyfile
+              readOnly: true
+
+        # ── Prometheus Exporter Sidecar ────────────────────────────────────────
+        # startupProbe gives the exporter up to 10 min to successfully connect.
+        # This handles the bootstrap window where the admin user doesn't exist yet.
+        - name: mongodb-exporter
+          image: percona/mongodb_exporter:0.40.0
+          args:
+            - --mongodb.uri=mongodb://$(MONGO_USER):$(MONGO_PASS)@localhost:27017/admin
+            - --collect-all
+            - --log.level=warn
+          ports:
+            - name: metrics
+              containerPort: 9216
+              protocol: TCP
+          # Allow up to 10 min for the exporter to connect (covers bootstrap window
+          # where MongoDB is up but the admin user hasn't been created yet).
+          startupProbe:
+            httpGet:
+              path: /metrics
+              port: 9216
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9216
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: MONGO_INITDB_ROOT_PASSWORD
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+
+      # ── Volumes (non-PVC) ───────────────────────────────────────────────────
+      volumes:
+        - name: mongodb-config
+          configMap:
+            name: mongodb-config
+            items:
+              - key: mongod.conf
+                path: mongod.conf
+        - name: keyfile-src
+          secret:
+            secretName: mongodb-secret
+            items:
+              - key: MONGO_REPLICA_SET_KEY
+                path: MONGO_REPLICA_SET_KEY
+            defaultMode: 0400
+        - name: keyfile
+          emptyDir:
+            medium: Memory   # in-memory so it never touches disk outside /data/db
+
+  # ── PVC template (one 50Gi gp3 volume per pod) ────────────────────────────
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-data
+        labels:
+          app.kubernetes.io/name: mongodb
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: mongodb-storage
+        resources:
+          requests:
+            storage: 50Gi

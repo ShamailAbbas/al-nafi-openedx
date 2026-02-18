@@ -270,15 +270,21 @@ When you're done with the deployment and want to tear down all resources:
 ### Commands:
 
 ```bash
-# First, delete all Kubernetes ingress resources
+# First, delete all Kubernetes ingress resources and loadbalancers
 # (This prevents ALB resources from being orphaned)
 kubectl delete ingress --all --all-namespaces
+
+kubectl delete svc --all --all-namespaces
+
+aws s3 rm "s3://${S3_STORAGE_BUCKET}" --recursive
+
 
 # Navigate back to the Terraform directory
 cd ../infra/environment/dev
 
 # Destroy all infrastructure resources
-terraform destroy
+terraform destroy --auto-approve
+
 ```
 
 **What happens:**

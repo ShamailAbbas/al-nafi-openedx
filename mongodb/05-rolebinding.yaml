@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mongodb
+  namespace: openedx
+  labels:
+    app.kubernetes.io/name: mongodb
+subjects:
+  - kind: ServiceAccount
+    name: mongodb
+    namespace: openedx
+roleRef:
+  kind: Role
+  name: mongodb
+  apiGroup: rbac.authorization.k8s.io

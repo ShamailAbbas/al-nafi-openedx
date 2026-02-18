@@ -1,0 +1,49 @@
+# =============================================================================
+# 3. CONFIGMAP  (mongod.conf + helper JS scripts)
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-config
+  namespace: openedx
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/component: database
+data:
+  mongod.conf: |
+    storage:
+      dbPath: /data/db
+      wiredTiger:
+        engineConfig:
+          cacheSizeGB: 1          # ← set to ~50% of pod memory limit
+          journalCompressor: snappy
+        collectionConfig:
+          blockCompressor: snappy
+        indexConfig:
+          prefixCompression: true
+
+    systemLog:
+      destination: file
+      path: /data/log/mongod.log
+      logAppend: true
+      logRotate: reopen
+      verbosity: 0
+
+    net:
+      port: 27017
+      bindIp: 0.0.0.0
+      # tls:
+      #   mode: requireTLS
+      #   certificateKeyFile: /etc/mongodb/tls/tls.pem
+      #   CAFile: /etc/mongodb/tls/ca.crt
+
+    replication:
+      replSetName: "rs0"
+
+    security:
+      authorization: enabled
+      keyFile: /etc/mongodb/keyfile
+
+    operationProfiling:
+      slowOpThresholdMs: 100
+      mode: slowOp

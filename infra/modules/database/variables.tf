@@ -66,45 +66,6 @@ variable "redis_security_group_id" {
   type        = string
 }
 
-variable "mongodb_security_group_id" {
-  description = "Security group ID for MongoDB"
-  type        = string
-}
-
-variable "vpc_id" {
-  description = "VPC ID for the database resources"
-  type        = string  
-  
-}
-
-variable "vpc_cidr" {
-  description = "CIDR block of the VPC"
-  type        = string
-  
-}
 
 
-# variables.tf - Add to your existing variables
-variable "mongodb_instance_type" {
-  description = "EC2 instance type for MongoDB"
-  type        = string
-  default     = "t3.medium"
-}
 
-variable "mongodb_disk_size" {
-  description = "Root disk size for MongoDB in GB"
-  type        = number
-  default     = 50
-}
-
-variable "mongodb_data_disk_size" {
-  description = "Data disk size for MongoDB in GB"
-  type        = number
-  default     = 100
-}
-
-variable "ssh_public_key_path" {
-  description = "Path to SSH public key file"
-  type        = string
-  default     = ""  # Empty default, will be set in locals
-}

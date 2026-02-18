@@ -22,6 +22,22 @@ spec:
           image: opensearchproject/logstash-oss-with-opensearch-output-plugin:8.9.0
           ports:
             - containerPort: 5000
+          env:
+          - name: OPENSEARCH_HOST
+            valueFrom:
+              secretKeyRef:
+                name: opensearch-credentials
+                key: host
+          - name: OPENSEARCH_USER
+            valueFrom:
+              secretKeyRef:
+                name: opensearch-credentials
+                key: username
+          - name: OPENSEARCH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: opensearch-credentials
+                key: password
           volumeMounts:
             - name: config
               mountPath: /usr/share/logstash/pipeline/
@@ -62,8 +78,6 @@ data:
       # Step 1: Identify log source and set index name
       ########################################################
       
-
-      
       # K8s system logs
       if [kubernetes][namespace_name] =~ /kube-system/ {
         if [kubernetes][labels][k8s-app] {
@@ -83,7 +97,6 @@ data:
           }
         }
       }
-      
       
       else {
         if [kubernetes][labels][app.kubernetes.io/name] {
@@ -121,7 +134,6 @@ data:
           tag_on_failure => ["_jsonparsefailure"]
         }
         
-        # If JSON parsing succeeded, flatten useful fields
         if "_jsonparsefailure" not in [tags] and [parsed_log] {
           mutate {
             rename => {
@@ -134,7 +146,7 @@ data:
       }
 
       ########################################################
-      # Step 4: Cleanup - remove the nested kubernetes object
+      # Step 4: Cleanup
       ########################################################
       mutate {
         remove_field => [ "kubernetes", "parsed_log" ]
@@ -143,14 +155,11 @@ data:
 
     output {
       opensearch {
-        hosts => ["https://search-openedx-dev-es-lke333zvoyzzdmcbtphdbnmewu.us-east-2.es.amazonaws.com:443"]
-        user => "admin"
-        password => "Admin123!"
+        hosts => ["${OPENSEARCH_HOST}"]
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
         ssl => true
         ssl_certificate_verification => false
         index => "%{[@metadata][index]}-%{+YYYY.MM.dd}"
       }
-      
-      # Debug output (optional - remove in production)
-      # stdout { codec => rubydebug }
     }

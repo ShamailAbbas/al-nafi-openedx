@@ -21,7 +21,7 @@ output "elasticsearch_master_username" {
 
 output "elasticsearch_master_password" {
   description = "OpenSearch master password"
-  value       = random_password.opensearch_master.result
+  value       = var.elasticsearch_master_password
   sensitive   = true
 }
 

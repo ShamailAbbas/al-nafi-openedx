@@ -106,20 +106,6 @@ variable "redis_num_cache_nodes" {
   default     = 1
 }
 
-variable "mongodb_instance_class" {
-  description = "MongoDB instance class"
-  type        = string
-  default     = "db.t3.medium"
-}
-
-variable "mongodb_instance_count" {
-  description = "MongoDB instance count"
-  type        = number
-  default     = 1
-}
-
-
-
 
 
 variable "elasticsearch_instance_type" {
@@ -159,6 +145,7 @@ variable "elasticsearch_master_password" {
   
 }
 
+
 variable "allowed_cidr_blocks" {
   description = "Allowed CIDR blocks"
   type        = list(string)
@@ -171,14 +158,24 @@ variable "domain_name" {
   default     = "dev.openedx.example.com"
 }
 
+
+
+variable "common_tags" {
+  description = "Common tags"
+  type        = map(string)
+  default     = {}
+}
+
+# variable "distribution_origin" {
+#   type = string
+# }
+
 variable "acm_certificate_arn" {
   description = "ACM certificate ARN"
   type        = string
   default     = ""
 }
 
-variable "common_tags" {
-  description = "Common tags"
-  type        = map(string)
-  default     = {}
+variable "nlb_dns_name" {
+  type = string
 }

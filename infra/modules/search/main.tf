@@ -1,11 +1,5 @@
 data "aws_caller_identity" "current" {}
 
-resource "random_password" "opensearch_master" {
-  length           = 16
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-}
-
 # OpenSearch Domain
 resource "aws_opensearch_domain" "openedx" {
   domain_name    = "${var.cluster_name}-es"

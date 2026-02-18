@@ -1,174 +1,63 @@
-# EFS File System
-resource "aws_efs_file_system" "openedx" {
-  creation_token   = "${var.cluster_name}-openedx-efs"
-  performance_mode = "generalPurpose"
-  throughput_mode  = "bursting"
-  encrypted        = true
+# ============================================================
+# Get current AWS account ID
+# ============================================================
 
-  lifecycle_policy {
-    transition_to_ia = "AFTER_30_DAYS"
-  }
+data "aws_caller_identity" "current" {}
 
-  tags = merge(var.common_tags, {
-    Name = "${var.cluster_name}-openedx-efs"
-  })
-}
+resource "random_uuid" "uuid" {}
 
-# EFS Mount Targets
-resource "aws_efs_mount_target" "openedx" {
-  count = length(var.private_subnets)
+# ============================================================
+# IAM USER FOR OPENEDX
+# ============================================================
 
-  file_system_id  = aws_efs_file_system.openedx.id
-  subnet_id       = var.private_subnets[count.index]
-  security_groups = [var.efs_security_group_id]
-}
+resource "aws_iam_user" "openedx_s3_user" {
+  name = "openedx-s3-user-${var.openedx_environment}"
+  path = "/openedx/"
 
-# EFS Access Point
-resource "aws_efs_access_point" "openedx" {
-  file_system_id = aws_efs_file_system.openedx.id
-
-  posix_user {
-    gid = 1000
-    uid = 1000
-  }
-
-  root_directory {
-    path = "/openedx"
-    creation_info {
-      owner_gid   = 1000
-      owner_uid   = 1000
-      permissions = "755"
-    }
-  }
-
-  tags = merge(var.common_tags, {
-    Name = "${var.cluster_name}-openedx-access-point"
-  })
-}
-
-# IAM role for EFS CSI driver
-resource "aws_iam_role" "efs_csi" {
-  name_prefix = "${var.cluster_name}-efs-csi-"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Federated = var.oidc_provider_arn
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:sub" = "system:serviceaccount:kube-system:efs-csi-controller-sa"
-        }
-      }
-    }]
-  })
-
-  tags = var.common_tags
-}
-
-resource "aws_iam_role_policy_attachment" "efs_csi" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy"
-  role       = aws_iam_role.efs_csi.name
-}
-
-# S3 Bucket
-# resource "aws_s3_bucket" "openedx" {
-#   bucket_prefix = "${var.cluster_name}-openedx-"
-
-#   tags = merge(var.common_tags, {
-#     Name = "${var.cluster_name}-openedx-media"
-#   })
-# }
-
-# resource "aws_s3_bucket_versioning" "openedx" {
-#   bucket = aws_s3_bucket.openedx.id
-#   versioning_configuration { status = "Enabled" }
-# }
-
-# resource "aws_s3_bucket_server_side_encryption_configuration" "openedx" {
-#   bucket = aws_s3_bucket.openedx.id
-
-#   rule {
-#     apply_server_side_encryption_by_default {
-#       sse_algorithm = "AES256"
-#     }
-#   }
-# }
-
-# resource "aws_s3_bucket_public_access_block" "openedx" {
-#   bucket = aws_s3_bucket.openedx.id
-
-#   block_public_acls       = false
-#   block_public_policy     = false
-#   ignore_public_acls      = false
-#   restrict_public_buckets = false
-# }
-
-# resource "aws_s3_bucket_cors_configuration" "openedx" {
-#   bucket = aws_s3_bucket.openedx.id
-
-#   cors_rule {
-#     allowed_headers = ["*"]
-#     allowed_methods = ["GET", "HEAD", "PUT", "POST", "DELETE"]
-#     allowed_origins = ["*"]
-#     expose_headers  = ["ETag"]
-#     max_age_seconds = 3000
-#   }
-# }
-
-# resource "aws_s3_bucket_policy" "openedx" {
-#   bucket = aws_s3_bucket.openedx.id
-
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [{
-#       Sid       = "PublicReadGetObject"
-#       Effect    = "Allow"
-#       Principal = "*"
-#       Action    = "s3:GetObject"
-#       Resource  = "${aws_s3_bucket.openedx.arn}/*"
-#     }]
-#   })
-# }
-
-
-
-
-# S3 Bucket for OpenEdX media files
-resource "aws_s3_bucket" "openedx" {
-  bucket_prefix = "${var.cluster_name}-openedx-"
-
-  tags = merge(var.common_tags, {
-    Name = "${var.cluster_name}-openedx-media"
-  })
-}
-
-# S3 Bucket versioning
-resource "aws_s3_bucket_versioning" "openedx" {
-  bucket = aws_s3_bucket.openedx.id
-
-  versioning_configuration {
-    status = "Enabled"
+  tags = {
+    Name        = "Open edX S3 User"
+    Environment = var.openedx_environment
+    ManagedBy   = "Terraform"
   }
 }
 
-# S3 Bucket encryption
-resource "aws_s3_bucket_server_side_encryption_configuration" "openedx" {
-  bucket = aws_s3_bucket.openedx.id
+# Access Key
+resource "aws_iam_access_key" "openedx_s3_user_key" {
+  user = aws_iam_user.openedx_s3_user.name
+}
 
+# ============================================================
+# FULL S3 ACCESS (ALL BUCKETS + CREATE BUCKET)
+# ============================================================
+
+resource "aws_iam_user_policy_attachment" "openedx_s3_full_access" {
+  user       = aws_iam_user.openedx_s3_user.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+# ============================================================
+# PRIVATE STORAGE BUCKET
+# ============================================================
+
+resource "aws_s3_bucket" "openedx_storage" {
+  bucket = "${var.storage_bucket_name}-${random_uuid.uuid.result}"
+
+  tags = {
+    Name        = "Open edX Storage Bucket"
+    Environment = var.openedx_environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_s3_bucket_ownership_controls" "openedx_storage" {
+  bucket = aws_s3_bucket.openedx_storage.id
   rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
+    object_ownership = "BucketOwnerEnforced"
   }
 }
 
-# S3 Bucket public access block
-resource "aws_s3_bucket_public_access_block" "openedx" {
-  bucket = aws_s3_bucket.openedx.id
+resource "aws_s3_bucket_public_access_block" "openedx_storage" {
+  bucket = aws_s3_bucket.openedx_storage.id
 
   block_public_acls       = false
   block_public_policy     = false
@@ -176,89 +65,103 @@ resource "aws_s3_bucket_public_access_block" "openedx" {
   restrict_public_buckets = false
 }
 
-# S3 Bucket CORS configuration
-resource "aws_s3_bucket_cors_configuration" "openedx" {
-  bucket = aws_s3_bucket.openedx.id
+resource "aws_s3_bucket_versioning" "openedx_storage" {
+  bucket = aws_s3_bucket.openedx_storage.id
+
+  versioning_configuration {
+    status = "Disabled"
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "openedx_storage" {
+  bucket = aws_s3_bucket.openedx_storage.id
 
   cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["GET", "HEAD", "PUT", "POST", "DELETE"]
+    allowed_headers = [
+      "Content-disposition",
+      "Content-type",
+      "X-CSRFToken"
+    ]
+    allowed_methods = [
+      "GET",
+      "PUT"
+    ]
     allowed_origins = ["*"]
-    expose_headers  = ["ETag"]
+    expose_headers  = []
     max_age_seconds = 3000
   }
 }
 
-# S3 Bucket policy for public read access
-resource "aws_s3_bucket_policy" "openedx" {
-  bucket = aws_s3_bucket.openedx.id
+# ============================================================
+# PUBLIC PROFILE IMAGES BUCKET
+# ============================================================
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.openedx.arn}/*"
-      }
-    ]
-  })
+# resource "aws_s3_bucket" "openedx_profile_images" {
+#   bucket = "${var.profile_images_bucket_name}-${random_uuid.uuid.result}"
 
-  depends_on = [aws_s3_bucket_public_access_block.openedx]
-}
+#   tags = {
+#     Name        = "Open edX Profile Images Bucket"
+#     Environment = var.openedx_environment
+#     ManagedBy   = "Terraform"
+#   }
+# }
 
-# IAM role for S3 access from EKS
-resource "aws_iam_role" "s3_access" {
-  name_prefix = "${var.cluster_name}-s3-access-"
+# resource "aws_s3_bucket_ownership_controls" "openedx_profile_images" {
+#   bucket = aws_s3_bucket.openedx_profile_images.id
+#   rule {
+#     object_ownership = "BucketOwnerEnforced"
+#   }
+# }
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = var.oidc_provider_arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:sub" = "system:serviceaccount:${var.namespace}:openedx"
-            "${replace(var.oidc_provider_arn, "/^(.*provider/)/", "")}:aud" = "sts.amazonaws.com"
-          }
-        }
-      }
-    ]
-  })
+# resource "aws_s3_bucket_public_access_block" "openedx_profile_images" {
+#   bucket = aws_s3_bucket.openedx_profile_images.id
 
-  tags = var.common_tags
+#   block_public_acls       = false
+#   block_public_policy     = false
+#   ignore_public_acls      = false
+#   restrict_public_buckets = false
+# }
 
-  
-}
+# resource "aws_s3_bucket_versioning" "openedx_profile_images" {
+#   bucket = aws_s3_bucket.openedx_profile_images.id
 
-# IAM policy for S3 bucket access
-resource "aws_iam_role_policy" "s3_access" {
-  name_prefix = "${var.cluster_name}-s3-policy-"
-  role        = aws_iam_role.s3_access.id
+#   versioning_configuration {
+#     status = "Disabled"
+#   }
+# }
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = [
-          aws_s3_bucket.openedx.arn,
-          "${aws_s3_bucket.openedx.arn}/*"
-        ]
-      }
-    ]
-  })
-}
+# resource "aws_s3_bucket_policy" "openedx_profile_images" {
+#   bucket = aws_s3_bucket.openedx_profile_images.id
+
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Sid       = "openedxWebAccess"
+#         Effect    = "Allow"
+#         Principal = "*"
+#         Action    = "s3:GetObject"
+#         Resource  = "${aws_s3_bucket.openedx_profile_images.arn}/*"
+#       }
+#     ]
+#   })
+
+#   depends_on = [
+#     aws_s3_bucket_public_access_block.openedx_profile_images
+#   ]
+# }
+
+# resource "aws_s3_bucket_cors_configuration" "openedx_profile_images" {
+#   bucket = aws_s3_bucket.openedx_profile_images.id
+
+#   cors_rule {
+#     allowed_headers = []
+#     allowed_methods = [
+#       "GET",
+#       "PUT"
+#     ]
+#     allowed_origins = ["*"]
+#     expose_headers  = []
+#     max_age_seconds = 3000
+#   }
+# }

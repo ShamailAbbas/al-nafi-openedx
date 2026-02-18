@@ -58,53 +58,38 @@ module "database" {
 
   rds_security_group_id     = module.security.rds_security_group_id
   redis_security_group_id   = module.security.redis_security_group_id
-  mongodb_security_group_id = module.security.mongodb_security_group_id
-
-  vpc_cidr = var.vpc_cidr
-  vpc_id = module.networking.vpc_id
-  
+    
 }
 
 module "storage" {
   source = "../../modules/storage"
 
-  cluster_name    = var.cluster_name
-  namespace = var.namespace
-  environment     = var.environment
-  private_subnets = module.networking.private_subnets
-  common_tags     = local.common_tags
-
-  efs_security_group_id = module.security.efs_security_group_id
-  oidc_provider_arn     = module.eks.oidc_provider_arn
-  
-
-  depends_on = [ module.eks ]
 }
 
-module "search" {
-  source = "../../modules/search"
+# module "search" {
+#   source = "../../modules/search"
 
-  cluster_name    = var.cluster_name
-  environment     = var.environment
-  private_subnets = module.networking.private_subnets
-  common_tags     = local.common_tags
+#   cluster_name    = var.cluster_name
+#   environment     = var.environment
+#   private_subnets = module.networking.private_subnets
+#   common_tags     = local.common_tags
 
-  elasticsearch_instance_type   = var.elasticsearch_instance_type
-  elasticsearch_instance_count  = var.elasticsearch_instance_count
-  elasticsearch_volume_size     = var.elasticsearch_volume_size
-  elasticsearch_public_access   = var.elasticsearch_public_access
-  elasticsearch_master_username = var.elasticsearch_master_username
-  elasticsearch_master_password = var.elasticsearch_master_password
+#   elasticsearch_instance_type   = var.elasticsearch_instance_type
+#   elasticsearch_instance_count  = var.elasticsearch_instance_count
+#   elasticsearch_volume_size     = var.elasticsearch_volume_size
+#   elasticsearch_public_access   = var.elasticsearch_public_access
+#   elasticsearch_master_username = var.elasticsearch_master_username
+#   elasticsearch_master_password = var.elasticsearch_master_password
 
-  elasticsearch_security_group_id = module.security.elasticsearch_security_group_id
-  allowed_cidr_blocks             = var.allowed_cidr_blocks
-  domain_name                     = var.domain_name
+#   elasticsearch_security_group_id = module.security.elasticsearch_security_group_id
+#   allowed_cidr_blocks             = var.allowed_cidr_blocks
+#   domain_name                     = var.domain_name
  
-  aws_region                       = var.aws_region
-}
+#   aws_region                       = var.aws_region
+# }
 
-# Note: CDN and WAF modules would be added once ALB is created
-# They depend on having an Application Load Balancer provisioned
+
+
 
 # Local variables
 locals {

@@ -48,86 +48,65 @@ output "redis_port" {
   value       = module.database.redis_port
 }
 
-output "mongodb_endpoint" {
-  description = "MongoDB endpoint"
-  value       = module.database.mongodb_endpoint
-}
-
-output "mongodb_ec2_public_ip" {
-  description = "MongoDB EC2 public IP address"
-  value       = module.database.mongodb_ec2_public_ip
-}
-
-output "mongodb_port" {
-  description = "MongoDB port"
-  value       = module.database.mongodb_port
-}
-
-output "mongodb_username" {
-  description = "MongoDB username"
-  value       = module.database.mongodb_username
-  sensitive   = true
-}
-
-output "mongodb_password" {
-  description = "MongoDB password"
-  value       = module.database.mongodb_password
-  sensitive   = true
-}
 
 
 
-
-
-output "elasticsearch_endpoint" {
-  description = "OpenSearch endpoint"
-  value       = module.search.elasticsearch_endpoint
-}
-
-output "elasticsearch_kibana_endpoint" {
-  description = "OpenSearch Kibana endpoint"
-  value       = module.search.elasticsearch_kibana_endpoint
-}
-
-output "elasticsearch_master_username" {
-  description = "OpenSearch master username"
-  value       = module.search.elasticsearch_master_username
-  sensitive   = true
-}
-
-output "elasticsearch_master_password" {
-  description = "OpenSearch master password"
-  value       = module.search.elasticsearch_master_password
-  sensitive   = true
-}
-
-# output "efs_id" {
-#   description = "EFS ID"
-#   value       = module.storage.efs_id
+# output "elasticsearch_endpoint" {
+#   description = "OpenSearch endpoint"
+#   value       = module.search.elasticsearch_endpoint
 # }
 
-output "s3_bucket_name" {
-  description = "S3 bucket name"
-  value       = module.storage.s3_bucket_name
+# output "elasticsearch_kibana_endpoint" {
+#   description = "OpenSearch Kibana endpoint"
+#   value       = module.search.elasticsearch_kibana_endpoint
+# }
+
+# output "elasticsearch_master_username" {
+#   description = "OpenSearch master username"
+#   value       = module.search.elasticsearch_master_username
+#   sensitive   = true
+# }
+
+# output "elasticsearch_master_password" {
+#   description = "OpenSearch master password"
+#   value       = module.search.elasticsearch_master_password
+#   sensitive   = true
+# }
+
+
+
+
+output "storage_bucket_name" {
+  description = "S3 Storage bucket name"
+  value       = module.storage.storage_bucket_name
 }
 
-# output "vpc_id" {
-#   description = "VPC ID"
-#   value       = module.networking.vpc_id
-# }
 
-# output "private_subnets" {
-#   description = "Private subnets"
-#   value       = module.networking.private_subnets
-# }
 
-# output "public_subnets" {
-#   description = "Public subnets"
-#   value       = module.networking.public_subnets
-# }
+
+output "aws_access_key_id" {
+  description = "AWS Access Key ID for the IAM user"
+  value       = module.storage.aws_access_key_id
+  sensitive = true
+}
+
+
+output "aws_secret_access_key" {
+  description = "AWS Secret Access Key for the IAM user"
+  value       = module.storage.aws_secret_access_key
+  sensitive = true
+}
+
+
 
 output "kubectl_config_command" {
   description = "Command to configure kubectl"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
+
+
+# output "cloudfront_domain_name" {
+#   description = "Use this in Namecheap CNAME records"
+#   value       = module.waf-cdn.cloudfront_domain_name
+# }
 

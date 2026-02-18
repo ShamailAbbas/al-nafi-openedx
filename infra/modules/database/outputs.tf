@@ -38,31 +38,3 @@ output "redis_port" {
 }
 
 
-
-
-
-output "mongodb_endpoint" {
-  description = "MongoDB private IP address"
-  value       = aws_instance.mongodb.private_ip
-}
-
-
-output "mongodb_ec2_public_ip" {
-  description = "MongoDB EC2 public IP address"
-  value       = aws_instance.mongodb.public_ip
-}
-
-output "mongodb_port" {
-  description = "MongoDB port"
-  value       = 27017
-}
-
-output "mongodb_username" {
-  description = "MongoDB username"
-  value       = "openedx"
-}
-
-output "mongodb_password" {
-  description = "MongoDB password"
-  value       = "Admin123@"
-}
