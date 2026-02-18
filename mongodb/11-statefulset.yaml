@@ -292,7 +292,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: mongodb-storage
+        storageClassName: gp3
         resources:
           requests:
             storage: 50Gi

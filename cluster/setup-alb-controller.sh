@@ -24,7 +24,7 @@ SERVICE_ACCOUNT_NAME="aws-load-balancer-controller"
 ##############################################
 
 echo ">>> Creating IAM policy for ALB controller..."
-curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+curl -o alb-iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
 
 aws iam create-policy \
   --policy-name $IAM_POLICY_NAME \

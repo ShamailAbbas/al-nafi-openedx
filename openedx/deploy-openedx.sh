@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Path to .env 
+# Path to .env
 ENV_FILE="../.env"
 
 # Load environment variables from .env file
@@ -67,7 +67,7 @@ tutor config save \
   --set RUN_REDIS=false \
   --set RUN_ELASTICSEARCH=false \
   --set RUN_MONGODB=false \
-  --set K8S_STORAGECLASS=gp2 \
+  --set K8S_STORAGECLASS=gp3 \
   --set LMS_HOST="savegb.org" \
   --set CMS_HOST="cms.savegb.org" \
   --set ENABLE_HTTPS=true \
@@ -148,7 +148,7 @@ tutor plugins enable skip_email_verification
 
 tutor k8s start
 
-# kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+kubectl patch storageclass gp3 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
 # kubectl delete svc caddy -n openedx
 # kubectl delete deploy caddy -n openedx

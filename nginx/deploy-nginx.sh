@@ -12,7 +12,7 @@ aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
 # Namespace
 kubectl apply -f namespace.yaml
 
-# Install Nginx Ingress 
+# Install Nginx Ingress
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1
 

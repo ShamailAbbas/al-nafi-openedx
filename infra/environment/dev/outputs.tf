@@ -51,27 +51,27 @@ output "redis_port" {
 
 
 
-# output "elasticsearch_endpoint" {
-#   description = "OpenSearch endpoint"
-#   value       = module.search.elasticsearch_endpoint
-# }
+output "elasticsearch_endpoint" {
+  description = "OpenSearch endpoint"
+  value       = module.search.elasticsearch_endpoint
+}
 
-# output "elasticsearch_kibana_endpoint" {
-#   description = "OpenSearch Kibana endpoint"
-#   value       = module.search.elasticsearch_kibana_endpoint
-# }
+output "elasticsearch_kibana_endpoint" {
+  description = "OpenSearch Kibana endpoint"
+  value       = module.search.elasticsearch_kibana_endpoint
+}
 
-# output "elasticsearch_master_username" {
-#   description = "OpenSearch master username"
-#   value       = module.search.elasticsearch_master_username
-#   sensitive   = true
-# }
+output "elasticsearch_master_username" {
+  description = "OpenSearch master username"
+  value       = module.search.elasticsearch_master_username
+  sensitive   = true
+}
 
-# output "elasticsearch_master_password" {
-#   description = "OpenSearch master password"
-#   value       = module.search.elasticsearch_master_password
-#   sensitive   = true
-# }
+output "elasticsearch_master_password" {
+  description = "OpenSearch master password"
+  value       = module.search.elasticsearch_master_password
+  sensitive   = true
+}
 
 
 
@@ -87,14 +87,14 @@ output "storage_bucket_name" {
 output "aws_access_key_id" {
   description = "AWS Access Key ID for the IAM user"
   value       = module.storage.aws_access_key_id
-  sensitive = true
+  sensitive   = true
 }
 
 
 output "aws_secret_access_key" {
   description = "AWS Secret Access Key for the IAM user"
   value       = module.storage.aws_secret_access_key
-  sensitive = true
+  sensitive   = true
 }
 
 

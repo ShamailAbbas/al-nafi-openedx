@@ -29,13 +29,13 @@ module "eks" {
 module "security" {
   source = "../../modules/security"
 
-  cluster_name           = var.cluster_name
-  environment            = var.environment
-  vpc_id                 = module.networking.vpc_id
-  node_security_group_id = module.eks.node_security_group_id
+  cluster_name              = var.cluster_name
+  environment               = var.environment
+  vpc_id                    = module.networking.vpc_id
+  node_security_group_id    = module.eks.node_security_group_id
   cluster_security_group_id = module.eks.cluster_security_group_id
-  common_tags            = local.common_tags
-  allowed_cidr_blocks    = var.allowed_cidr_blocks
+  common_tags               = local.common_tags
+  allowed_cidr_blocks       = var.allowed_cidr_blocks
 
 }
 
@@ -56,29 +56,14 @@ module "database" {
   redis_num_cache_nodes = var.redis_num_cache_nodes
 
 
-  rds_security_group_id     = module.security.rds_security_group_id
-  redis_security_group_id   = module.security.redis_security_group_id
-  mongodb_security_group_id = module.security.mongodb_security_group_id
+  rds_security_group_id   = module.security.rds_security_group_id
+  redis_security_group_id = module.security.redis_security_group_id
 
-  vpc_cidr = var.vpc_cidr
-  vpc_id = module.networking.vpc_id
-  
 }
 
 module "storage" {
   source = "../../modules/storage"
 
-  cluster_name    = var.cluster_name
-  namespace = var.namespace
-  environment     = var.environment
-  private_subnets = module.networking.private_subnets
-  common_tags     = local.common_tags
-
-  efs_security_group_id = module.security.efs_security_group_id
-  oidc_provider_arn     = module.eks.oidc_provider_arn
-  
-
-  depends_on = [ module.eks ]
 }
 
 module "search" {
@@ -99,12 +84,12 @@ module "search" {
   elasticsearch_security_group_id = module.security.elasticsearch_security_group_id
   allowed_cidr_blocks             = var.allowed_cidr_blocks
   domain_name                     = var.domain_name
- 
-  aws_region                       = var.aws_region
+
+  aws_region = var.aws_region
 }
 
-# Note: CDN and WAF modules would be added once ALB is created
-# They depend on having an Application Load Balancer provisioned
+
+
 
 # Local variables
 locals {

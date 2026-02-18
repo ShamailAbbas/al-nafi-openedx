@@ -29,13 +29,13 @@ module "eks" {
 module "security" {
   source = "../../modules/security"
 
-  cluster_name           = var.cluster_name
-  environment            = var.environment
-  vpc_id                 = module.networking.vpc_id
-  node_security_group_id = module.eks.node_security_group_id
+  cluster_name              = var.cluster_name
+  environment               = var.environment
+  vpc_id                    = module.networking.vpc_id
+  node_security_group_id    = module.eks.node_security_group_id
   cluster_security_group_id = module.eks.cluster_security_group_id
-  common_tags            = local.common_tags
-  allowed_cidr_blocks    = var.allowed_cidr_blocks
+  common_tags               = local.common_tags
+  allowed_cidr_blocks       = var.allowed_cidr_blocks
 
 }
 
@@ -56,9 +56,9 @@ module "database" {
   redis_num_cache_nodes = var.redis_num_cache_nodes
 
 
-  rds_security_group_id     = module.security.rds_security_group_id
-  redis_security_group_id   = module.security.redis_security_group_id
-    
+  rds_security_group_id   = module.security.rds_security_group_id
+  redis_security_group_id = module.security.redis_security_group_id
+
 }
 
 module "storage" {
@@ -66,27 +66,27 @@ module "storage" {
 
 }
 
-# module "search" {
-#   source = "../../modules/search"
+module "search" {
+  source = "../../modules/search"
 
-#   cluster_name    = var.cluster_name
-#   environment     = var.environment
-#   private_subnets = module.networking.private_subnets
-#   common_tags     = local.common_tags
+  cluster_name    = var.cluster_name
+  environment     = var.environment
+  private_subnets = module.networking.private_subnets
+  common_tags     = local.common_tags
 
-#   elasticsearch_instance_type   = var.elasticsearch_instance_type
-#   elasticsearch_instance_count  = var.elasticsearch_instance_count
-#   elasticsearch_volume_size     = var.elasticsearch_volume_size
-#   elasticsearch_public_access   = var.elasticsearch_public_access
-#   elasticsearch_master_username = var.elasticsearch_master_username
-#   elasticsearch_master_password = var.elasticsearch_master_password
+  elasticsearch_instance_type   = var.elasticsearch_instance_type
+  elasticsearch_instance_count  = var.elasticsearch_instance_count
+  elasticsearch_volume_size     = var.elasticsearch_volume_size
+  elasticsearch_public_access   = var.elasticsearch_public_access
+  elasticsearch_master_username = var.elasticsearch_master_username
+  elasticsearch_master_password = var.elasticsearch_master_password
 
-#   elasticsearch_security_group_id = module.security.elasticsearch_security_group_id
-#   allowed_cidr_blocks             = var.allowed_cidr_blocks
-#   domain_name                     = var.domain_name
- 
-#   aws_region                       = var.aws_region
-# }
+  elasticsearch_security_group_id = module.security.elasticsearch_security_group_id
+  allowed_cidr_blocks             = var.allowed_cidr_blocks
+  domain_name                     = var.domain_name
+
+  aws_region = var.aws_region
+}
 
 
 

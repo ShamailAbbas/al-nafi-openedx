@@ -14,7 +14,7 @@ terraform apply --auto-approve
 bash getcreds.sh
 
 
-###########Deeploy nginx and cert manager###########
+###########Deploy nginx and cert manager###########
 # Navigate to nginx directory
 cd ../../../nginx
 
@@ -22,7 +22,14 @@ cd ../../../nginx
 bash deploy-nginx.sh
 
 
-###########Deeploy OpenEdx###########
+###########Deploy MongoDB###########
+cd ../mongodb
+
+# Run the deployment script
+bash deploy.sh
+
+
+###########Deploy OpenEdx###########
 cd ../openedx
 
 # Run the deployment script
@@ -40,9 +47,17 @@ terraform apply --auto-approve
 
 #################Deploy monitoring stack##################
 # Navigate to monitoring directory
+
+
 cd ../monitoring
 
 bash deploy-monitoring.sh
+
+
+# Navigate to cluster directory and set up ALB controller
+
+cd ../cluster
+bash setup-alb-controller.sh
 
 
 
