@@ -199,23 +199,29 @@ bash cluster-autoscaler.sh
 
 ---
 
-## Step 11: Cleanup
+
+
+## Step 11: Load Generation
 
 ### Commands
 
+This script will generate 300 concurrent requests for 10 minutes using k6. k6 must be installed on the system
+
 ```bash
-# Delete ingress resources first to avoid orphaned AWS Load Balancers
-kubectl delete ingress --all --all-namespaces
-kubectl delete svc --all --all-namespaces
-
-# Remove S3 bucket contents
-aws s3 rm "s3://${S3_STORAGE_BUCKET}" --recursive
-
-# Destroy Terraform infrastructure
-cd ../infra/environment/dev
-terraform destroy --auto-approve
+k6 run load.js
 ```
 
-**Notes:** Delete ingress resources first to prevent leftover ALBs. Terraform destroy will remove EKS, VPC, databases, storage, and all other resources.
+
+## Step 12: Cleanup
+
+### Commands
+
+This script will delete everything
+
+```bash
+bash destroy-all.sh
+```
+
+
 
 ---

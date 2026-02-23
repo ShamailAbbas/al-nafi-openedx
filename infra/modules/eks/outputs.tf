@@ -38,3 +38,9 @@ output "eks_managed_node_groups" {
   description = "EKS managed node groups"
   value       = module.eks.eks_managed_node_groups
 }
+
+
+output "cluster_autoscaler_role_arn" {
+  description = "IAM role ARN for the cluster autoscaler — used in setup-ca.sh"
+  value       = module.cluster_autoscaler_irsa_role.iam_role_arn
+}

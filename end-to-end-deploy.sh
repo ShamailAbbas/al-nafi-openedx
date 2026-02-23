@@ -38,18 +38,18 @@ bash deploy-openedx.sh
 
 ###########Configure WAF and CDN ###########
 # Navigate to waf_cdn directory
-# cd ../waf_cdn
-# terraform init
+cd ../waf_cdn
+terraform init
 
-# terraform apply --auto-approve
+terraform apply --auto-approve
 
 
 ###########Deploy ingress and cert manager###########
 # Navigate to nginx directory
-# cd ../nginx
+cd ../nginx
 
-# # Run the deployment script
-# bash deploy-ingress.sh
+# Run the deployment script
+bash deploy-ingress.sh
 
 
 
@@ -57,23 +57,23 @@ bash deploy-openedx.sh
 # Navigate to monitoring directory
 
 
-# cd ../monitoring
+cd ../monitoring
 
-# bash deploy-monitoring.sh
+bash deploy-monitoring.sh
 
 
 # Navigate to cluster directory and set up ALB controller
 
-# cd ../cluster
-# bash setup-alb-controller.sh
+cd ../cluster
+bash setup-alb-controller.sh
 
 
 
 ############Deploy Anlytics Stack###################
 # Navigate to analytics directory
-# cd ../analytics
+cd ../analytics
 
-# bash deploy-analytics.sh
+bash deploy-analytics.sh
 
 
 
@@ -82,7 +82,7 @@ bash deploy-openedx.sh
 
 ########################## Configure HPA for OpenEdx LMs and CMS##################
 # Navigate to openedx directory
-# cd ../openedx
+cd ../openedx
 
 bash configure-hpa.sh
 
@@ -91,7 +91,7 @@ bash configure-hpa.sh
 
 ###################### Configure Cluster Auto Scaler #####################
 # Navigate to cluster directory
-# cd ../cluster
+cd ../cluster
 
-# # Deploy the cluster autoscaler
-# bash cluster-autoscaler.sh
+# Deploy the cluster autoscaler
+bash cluster-autoscaler.sh

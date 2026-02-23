@@ -27,7 +27,7 @@ spec:
         averageUtilization: 80
   behavior:
     scaleDown:
-      stabilizationWindowSeconds: 300
+      stabilizationWindowSeconds: 120
       policies:
       - type: Percent
         value: 10
@@ -72,7 +72,7 @@ spec:
         averageUtilization: 80
   behavior:
     scaleDown:
-      stabilizationWindowSeconds: 300
+      stabilizationWindowSeconds: 120
       policies:
       - type: Percent
         value: 10
@@ -117,7 +117,7 @@ spec:
         averageUtilization: 80
   behavior:
     scaleDown:
-      stabilizationWindowSeconds: 300
+      stabilizationWindowSeconds: 120
       policies:
       - type: Percent
         value: 10
@@ -162,7 +162,7 @@ spec:
         averageUtilization: 80
   behavior:
     scaleDown:
-      stabilizationWindowSeconds: 300
+      stabilizationWindowSeconds: 120
       policies:
       - type: Percent
         value: 10

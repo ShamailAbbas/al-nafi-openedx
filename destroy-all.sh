@@ -25,7 +25,7 @@ terraform destroy --auto-approve
 
 echo "Destroyed Infra"
 
-# cd ../../../waf_cdn
-# terraform destroy --auto-approve
+cd ../../../waf_cdn
+terraform destroy --auto-approve
 
-# echo "Destroyed waf and cnd"
+echo "Destroyed waf and cnd"
