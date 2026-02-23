@@ -5,5 +5,5 @@ metadata:
 provisioner: ebs.csi.aws.com
 parameters:
   type: gp3
-reclaimPolicy: Delete #  Delete or Retain
+reclaimPolicy: Retain #  Delete or Retain
 volumeBindingMode: WaitForFirstConsumer

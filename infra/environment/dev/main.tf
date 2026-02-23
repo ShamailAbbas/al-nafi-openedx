@@ -45,7 +45,7 @@ module "database" {
   cluster_name    = var.cluster_name
   environment     = var.environment
   private_subnets = module.networking.private_subnets
-  public_subnets  = module.networking.public_subnets
+  
   common_tags     = local.common_tags
 
   db_instance_class    = var.db_instance_class

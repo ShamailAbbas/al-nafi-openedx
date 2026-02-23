@@ -153,7 +153,7 @@ kubectl patch storageclass gp3 -p '{"metadata": {"annotations":{"storageclass.ku
 # kubectl delete svc caddy -n openedx
 # kubectl delete deploy caddy -n openedx
 
-# tutor k8s init
+tutor k8s init
 
 
 

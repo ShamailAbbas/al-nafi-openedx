@@ -14,7 +14,7 @@ terraform apply --auto-approve
 bash getcreds.sh
 
 
-###########Deploy nginx and cert manager###########
+###########Deploy nginx ###########
 # Navigate to nginx directory
 cd ../../../nginx
 
@@ -38,10 +38,18 @@ bash deploy-openedx.sh
 
 ###########Configure WAF and CDN ###########
 # Navigate to waf_cdn directory
-cd ../waf_cdn
-terraform init
+# cd ../waf_cdn
+# terraform init
 
-terraform apply --auto-approve
+# terraform apply --auto-approve
+
+
+###########Deploy ingress and cert manager###########
+# Navigate to nginx directory
+# cd ../nginx
+
+# # Run the deployment script
+# bash deploy-ingress.sh
 
 
 
@@ -49,23 +57,23 @@ terraform apply --auto-approve
 # Navigate to monitoring directory
 
 
-cd ../monitoring
+# cd ../monitoring
 
-bash deploy-monitoring.sh
+# bash deploy-monitoring.sh
 
 
 # Navigate to cluster directory and set up ALB controller
 
-cd ../cluster
-bash setup-alb-controller.sh
+# cd ../cluster
+# bash setup-alb-controller.sh
 
 
 
 ############Deploy Anlytics Stack###################
 # Navigate to analytics directory
-cd ../analytics
+# cd ../analytics
 
-bash deploy-analytics.sh
+# bash deploy-analytics.sh
 
 
 
@@ -74,20 +82,16 @@ bash deploy-analytics.sh
 
 ########################## Configure HPA for OpenEdx LMs and CMS##################
 # Navigate to openedx directory
-cd ../openedx
+# cd ../openedx
 
-# Deploy Kubernetes Metrics Server (required for HPA)
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-# Apply HPA configurations for LMS, CMS, and worker pods
-kubectl apply -f hpa.yaml
+bash configure-hpa.sh
 
 
 
 
 ###################### Configure Cluster Auto Scaler #####################
 # Navigate to cluster directory
-cd ../cluster
+# cd ../cluster
 
-# Deploy the cluster autoscaler
-bash cluster-autoscaler.sh
+# # Deploy the cluster autoscaler
+# bash cluster-autoscaler.sh

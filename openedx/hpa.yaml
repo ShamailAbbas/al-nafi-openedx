@@ -30,13 +30,13 @@ spec:
       stabilizationWindowSeconds: 300
       policies:
       - type: Percent
-        value: 50
+        value: 10
         periodSeconds: 60
     scaleUp:
       stabilizationWindowSeconds: 60
       policies:
       - type: Percent
-        value: 100
+        value: 10
         periodSeconds: 30
       - type: Pods
         value: 2
@@ -63,7 +63,7 @@ spec:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 75
+        averageUtilization: 70
   - type: Resource
     resource:
       name: memory
@@ -75,14 +75,18 @@ spec:
       stabilizationWindowSeconds: 300
       policies:
       - type: Percent
-        value: 50
-        periodSeconds: 90
+        value: 10
+        periodSeconds: 60
     scaleUp:
-      stabilizationWindowSeconds: 30
+      stabilizationWindowSeconds: 60
       policies:
       - type: Percent
-        value: 100
+        value: 10
         periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 30
+      selectPolicy: Max
 
 ---
 # HPA for CMS deployment
@@ -116,14 +120,18 @@ spec:
       stabilizationWindowSeconds: 300
       policies:
       - type: Percent
-        value: 50
+        value: 10
         periodSeconds: 60
     scaleUp:
       stabilizationWindowSeconds: 60
       policies:
       - type: Percent
-        value: 100
+        value: 10
         periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 30
+      selectPolicy: Max
 
 ---
 # HPA for CMS Worker deployment
@@ -145,7 +153,7 @@ spec:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 75
+        averageUtilization: 70
   - type: Resource
     resource:
       name: memory
@@ -157,11 +165,15 @@ spec:
       stabilizationWindowSeconds: 300
       policies:
       - type: Percent
-        value: 50
-        periodSeconds: 90
+        value: 10
+        periodSeconds: 60
     scaleUp:
-      stabilizationWindowSeconds: 30
+      stabilizationWindowSeconds: 60
       policies:
       - type: Percent
-        value: 100
+        value: 10
         periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 30
+      selectPolicy: Max

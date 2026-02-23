@@ -27,14 +27,20 @@ provider "aws" {
 variable "dns_record_for_nlb" {
   description = "NLB DNS name from kubectl"
   type        = string
-  default     = "a6a4f982fbbb4481d9d81004155637cf-44f06553c346cef4.elb.us-east-2.amazonaws.com"
+  
 }
 
 variable "nlb_arn" {
   description = "NLB ARN"
   type        = string
-  default     = "arn:aws:elasticloadbalancing:us-east-2:975148381826:loadbalancer/net/a6a4f982fbbb4481d9d81004155637cf/44f06553c346cef4"
+  
 }
+
+variable "nlb_dns" {
+  description = "NLB DNS"
+  type        = string
+}
+
 
 variable "domain_name" {
   description = "Your domain (e.g., savegb.org)"
@@ -645,17 +651,34 @@ output "acm_validation_records" {
   }
 }
 
-output "cloudfront_domain" {
-  description = "CloudFront domain - point your Namecheap CNAME records here"
-  value       = aws_cloudfront_distribution.openedx.domain_name
-}
 
-output "cloudfront_id" {
-  description = "CloudFront distribution ID"
-  value       = aws_cloudfront_distribution.openedx.id
-}
 
-output "waf_arn" {
-  description = "WAF Web ACL ARN"
-  value       = aws_wafv2_web_acl.openedx.arn
+output "dns_records" {
+  description = "CNAME records to configure in Namecheap"
+
+  value = {
+    "@" = {
+      name  = "@"
+      type  = "CNAME"
+      value = aws_cloudfront_distribution.openedx.domain_name
+    }
+
+    apps = {
+      name  = "apps"
+      type  = "CNAME"
+      value = aws_cloudfront_distribution.openedx.domain_name
+    }
+
+    cms = {
+      name  = "cms"
+      type  = "CNAME"
+      value = aws_cloudfront_distribution.openedx.domain_name
+    }
+
+    lb = {
+      name  = "lb"
+      type  = "CNAME"
+      value = var.nlb_dns
+    }
+  }
 }
